@@ -1,6 +1,9 @@
 module Demo where
 import Animation
 
+rectangleWidth :: Double
+rectangleWidth = 20
+
 pic :: Animation
 pic = getAll 10
 
@@ -27,13 +30,13 @@ getTranlationConfig :: Double -> Varying (Double, Double)
 getTranlationConfig rectNumber = cycleSmooth 0.01 (getTranslationCoordinates rectNumber)
 
 getTranslationCoordinates :: Double -> [ (Double, Double) ]
-getTranslationCoordinates rectNumber = [ (x, y) | x <- [0..500], y <-[20*rectNumber] ]
+getTranslationCoordinates rectNumber = [ (x, y) | x <- [0..500], y <-[rectangleWidth*rectNumber] ]
 
 getRectangleShape :: Double -> Animation
-getRectangleShape rectNumber = rect (always 250) (always (20))
+getRectangleShape rectNumber = rect (always 250) (always (rectangleWidth))
 
 test :: IO ()
-test = writeFile "test.svg" (svg 800 600 pic)
+test = writeFile "test.svg" (svg 1000 1000 pic)
 
 isDivisable :: Integer->Integer->Bool
 isDivisable x y = x `mod` y == 0
