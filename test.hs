@@ -33,7 +33,7 @@ getTranslationCoordinates :: Double -> [ (Double, Double) ]
 getTranslationCoordinates rectNumber = [ (x, y) | x <- [0..500], y <-[rectangleWidth*rectNumber] ]
 
 getRectangleShape :: Double -> Animation
-getRectangleShape rectNumber = rect (always 250) (always (rectangleWidth))
+getRectangleShape rectNumber = rect (always 250) (always (rectangleWidth)) 
 
 test :: IO ()
 test = writeFile "test.svg" (svg 1000 1000 pic)
