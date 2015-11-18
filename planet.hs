@@ -2,10 +2,10 @@ module Demo where
 import Animation
 
 svgHeight :: Double
-svgHeight = 750
+svgHeight = 1000
 
 svgWidth :: Double
-svgWidth = 750
+svgWidth = 1000
 
 --individual planet config
 --format: size, speed, orbit radius, colour, OrbitDirection, Moons
@@ -13,17 +13,34 @@ sunConfig :: ( Double, Double, Double, Colour, OrbitDirection, [(Double, Double,
 sunConfig = (25.0, 0.0, 0.0, yellow, CounterClockwise, [])
 
 mercuryConfig :: ( Double, Double, Double, Colour, OrbitDirection, [(Double, Double, Double, Colour, OrbitDirection)] )
-mercuryConfig = (5, 0.5, 60, purple, CounterClockwise, [])
+mercuryConfig = (7.5, 0.5, 60, green, CounterClockwise, [])
 
 venusConfig :: ( Double, Double, Double, Colour, OrbitDirection, [(Double, Double, Double, Colour, OrbitDirection)] )
-venusConfig = (11, 0.35, 115, green, CounterClockwise, [])
+venusConfig = (11, 0.35, 115, maroon, CounterClockwise, [])
 
 earthConfig :: ( Double, Double, Double, Colour, OrbitDirection, [(Double, Double, Double, Colour, OrbitDirection)] )
-earthConfig = (12.5, 0.25, 150, blue, CounterClockwise, [(5, 0.25, 25, black, CounterClockwise)])
+earthConfig = (12.5, 0.25, 160, blue, CounterClockwise, [(5, 0.25, 25, black, CounterClockwise)])
+
+marsConfig :: ( Double, Double, Double, Colour, OrbitDirection, [(Double, Double, Double, Colour, OrbitDirection)] )
+marsConfig = (10, 0.4, 210, red, CounterClockwise, [])
+
+jupiterConfig :: ( Double, Double, Double, Colour, OrbitDirection, [(Double, Double, Double, Colour, OrbitDirection)] )
+jupiterConfig = (20, 0.29, 260, gray, CounterClockwise, [])
+
+saturnConfig :: ( Double, Double, Double, Colour, OrbitDirection, [(Double, Double, Double, Colour, OrbitDirection)] )
+saturnConfig = (16, 0.65, 300, silver, CounterClockwise, [])
+
+uranusConfig :: ( Double, Double, Double, Colour, OrbitDirection, [(Double, Double, Double, Colour, OrbitDirection)] )
+uranusConfig = (14, 0.60, 335, teal, CounterClockwise, [])
+
+neptuneConfig :: ( Double, Double, Double, Colour, OrbitDirection, [(Double, Double, Double, Colour, OrbitDirection)] )
+neptuneConfig = (14, 0.69, 375, navy, CounterClockwise, [])
+
+plutoConfig :: ( Double, Double, Double, Colour, OrbitDirection, [(Double, Double, Double, Colour, OrbitDirection)] )
+plutoConfig = (5, 0.8, 450, aqua, CounterClockwise, [])
 
 allPlanetConfig :: [(Double, Double, Double, Colour, OrbitDirection, [(Double, Double, Double, Colour, OrbitDirection)]) ]
-allPlanetConfig = [sunConfig, earthConfig, mercuryConfig, venusConfig]
---allPlanetConfig = [earthConfig]
+allPlanetConfig = [sunConfig, earthConfig, mercuryConfig, venusConfig, marsConfig, jupiterConfig, saturnConfig, uranusConfig, neptuneConfig, plutoConfig]
 --config end	
 
 pic :: Animation
@@ -98,7 +115,8 @@ getAngleList orbitDirection
 
 buildAngleList :: [Double] -> [Double]
 buildAngleList [] = []
-buildAngleList (x:xs) = x:x+0.25:x+0.5:x+0.75:buildAngleList xs
+--buildAngleList (x:xs) = x:x+0.25:x+0.5:x+0.75:buildAngleList xs
+buildAngleList (x:xs) = x:x+0.1:x+0.2:x+0.3:x+0.4:x+0.5:x+0.6:x+0.7:x+0.8:x+0.9:buildAngleList xs
 --Need refactor ^^^^^^
 
 getCoordinateOnCircumference :: Double -> Double -> Double -> (Double -> Double) -> Double
