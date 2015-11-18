@@ -2,32 +2,46 @@ module Demo where
 import Animation
 
 svgHeight :: Double
-svgHeight = 1000
+svgHeight = 750
 
 svgWidth :: Double
-svgWidth = 1000
+svgWidth = 750
 
 --individual planet config
 --format: size, speed, orbit radius, colour, OrbitDirection
 sunConfig :: ( Double, Double, Double, Colour, OrbitDirection )
 sunConfig = (25.0, 0.0, 0.0, yellow, CounterClockwise)
 
+mercuryConfig :: ( Double, Double, Double, Colour, OrbitDirection )
+mercuryConfig = (5, 0.5, 60, purple, CounterClockwise)
+
+venusConfig :: ( Double, Double, Double, Colour, OrbitDirection )
+venusConfig = (11, 0.35, 115, green, CounterClockwise)
+
 earthConfig :: ( Double, Double, Double, Colour, OrbitDirection )
 earthConfig = (12.5, 0.25, 150, blue, CounterClockwise)
 
-allPlanetConfig :: [(Double, Double, Double, Colour, OrbitDirection)]
-allPlanetConfig = [sunConfig, earthConfig]
-
-	
+allPlanetConfig :: [(Double, Double, Double, Colour, OrbitDirection) ]
+allPlanetConfig = [sunConfig, earthConfig, mercuryConfig, venusConfig]
+--config end	
 
 pic :: Animation
 pic = allPlanets
 
 allPlanets :: Animation
-allPlanets = joinShapes [ getPlanetConfig n | n <- allPlanetConfig ]
+allPlanets = combine [ buildPlanet n | n <- allPlanetConfig ]
 
-getPlanetConfig :: ( Double, Double, Double, Colour, OrbitDirection ) -> Animation
-getPlanetConfig (size, speed, orbitradius, colour, orbitDirection) = translate (getTranslationConfig orbitradius speed orbitDirection) (withPaint (always colour) (getCircleShape size))
+buildPlanet :: ( Double, Double, Double, Colour, OrbitDirection ) -> Animation
+buildPlanet (size, speed, orbitRadius, colour, orbitDirection) = (getOrbitShape orbitRadius) `plus` (getPlanetShape (size, speed, orbitRadius, colour, orbitDirection))
+
+--getMoonShape :: ( Double, Double, Double, Colour, OrbitDirection ) -> Double -> Double -> Animation
+--getMoonShape (size, speed, orbitRadius, colour, orbitDirection) speed radius = 
+
+getPlanetShape :: ( Double, Double, Double, Colour, OrbitDirection ) -> Animation
+getPlanetShape (size, speed, orbitRadius, colour, orbitDirection) = translate (getTranslationConfig orbitRadius speed orbitDirection) (withPaint (always colour) (getCircleShape size))
+
+getOrbitShape :: Double -> Animation
+getOrbitShape radius = translate (always (xCenter, yCenter)) (withBorder (always grey) (always 2.5) (withoutPaint (circle (always radius))))
 
 getTranslationConfig :: Double -> Double -> OrbitDirection-> Varying (Double, Double)
 getTranslationConfig orbitradius speed orbitDirection
@@ -53,12 +67,6 @@ getCoordinateOnCircumference angle radius circleMidPoint trigFunc = (circleMidPo
 
 getCircleShape :: Double -> Animation
 getCircleShape radius = circle (always radius)
-
---need to refactor this
-joinShapes :: [Animation] -> Animation
-joinShapes shapeList
-	| (length shapeList) > 1 = (head shapeList) `plus` joinShapes (tail shapeList)
-	| (length shapeList) == 1 = head shapeList	
 
 xCenter :: Double
 xCenter = svgWidth/2
