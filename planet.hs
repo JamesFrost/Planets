@@ -110,20 +110,17 @@ getCircleCoordinates radius orbitDirection = [ (getCoordinateOnCircumference ang
 --Need refactor 
 getAngleList :: OrbitDirection -> [Double]
 getAngleList orbitDirection 
-	| orbitDirection == Clockwise = buildAngleList [0..364]
-	| otherwise = reverse (buildAngleList [0..364])
-
-buildAngleList :: [Double] -> [Double]
-buildAngleList [] = []
---buildAngleList (x:xs) = x:x+0.25:x+0.5:x+0.75:buildAngleList xs
-buildAngleList (x:xs) = x:x+0.1:x+0.2:x+0.3:x+0.4:x+0.5:x+0.6:x+0.7:x+0.8:x+0.9:buildAngleList xs
---Need refactor ^^^^^^
+	| orbitDirection == Clockwise = angles
+	| otherwise = reverse angles
 
 getCoordinateOnCircumference :: Double -> Double -> Double -> (Double -> Double) -> Double
 getCoordinateOnCircumference angle radius circleMidPoint trigFunc = (circleMidPoint + radius *(trigFunc angle) )
 
 getCircleShape :: Double -> Animation
 getCircleShape radius = circle (always radius)
+
+angles :: [Double]
+angles = [0.0,0.1..359]
 
 xCenter :: Double
 xCenter = svgWidth/2
