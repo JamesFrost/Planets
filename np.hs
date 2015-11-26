@@ -51,8 +51,11 @@ planetShapeConfig :: [(Double, Colour)]
 planetShapeConfig = [(25, yellow), (7.5, green)]
 
 planetMovementConfig :: [(Double, OrbitDirection, Double)]
-planetMovementConfig = [(0, CounterClockwise, 0), (0.05, CounterClockwise, 500)]
+planetMovementConfig = [(0, CounterClockwise, 0), (0.05, CounterClockwise, 50)]
 
+--size, colour, radius, orbit direction
+--moonConfig :: [ [(Double, Colour, Double, OrbitDirection)] ]
+--moonConfig = [[], [(5, black, 25, CounterClockwise)]]
 
 pic :: Animation
 pic = allPlanets
@@ -62,7 +65,15 @@ allPlanets = combine (zipWith buildPlanet planetShapeConfig planetMovementConfig
 
 buildPlanet :: (Double, Colour) -> (Double, OrbitDirection, Double) -> Animation
 buildPlanet shapeConfig movementConfig = 
-	getPlanetAnimation shapeConfig movementConfig
+	getOrbitShape movementConfig
+		`plus` 
+			getPlanetAnimation shapeConfig movementConfig 
+
+getOrbitShape :: (Double, OrbitDirection, Double) -> Animation
+getOrbitShape (speed, orbitDirection, radius) =
+	translate (always (xCenter, yCenter)) 
+		(withBorder (always grey) (always 2.5) 
+			(withoutPaint (circle (always radius))))
 
 getPlanetAnimation :: (Double, Colour) -> (Double, OrbitDirection, Double) -> Animation
 getPlanetAnimation shapeConfig movementConfig =
@@ -76,7 +87,7 @@ getPlanetTranslation (speed, orbitDirection, radius)
 
 getPlanetOrbitCoordinates :: Double -> [(Double, Double)]
 getPlanetOrbitCoordinates radius =
-	map (\(x, y) -> ((radius*x)+xCenter, (radius*y)+yCenter)) circleCircumferenceCoordinates
+	map (\(x, y) -> ( (radius*x)+xCenter, (radius*y)+yCenter) ) circleCircumferenceCoordinates
 
 circleCircumferenceCoordinates :: [(Double, Double)]
 circleCircumferenceCoordinates = 
@@ -84,7 +95,7 @@ circleCircumferenceCoordinates =
 
 getCoordinatePairOnCircumference :: Double -> (Double, Double)
 getCoordinatePairOnCircumference angle =
-	(getCoordinateOnCircumference angle 0.1 0 cos, getCoordinateOnCircumference angle 0.1 0 sin)
+	(getCoordinateOnCircumference angle 1 0 cos, getCoordinateOnCircumference angle 1 0 sin)
 
 getCoordinateOnCircumference :: Double -> Double -> Double -> (Double -> Double) -> Double
 getCoordinateOnCircumference angle radius circleMidPoint trigFunc = (circleMidPoint + radius *(trigFunc angle) )
@@ -93,8 +104,6 @@ getPlanetShape :: (Double, Colour) -> Animation
 getPlanetShape (size, colour) =
 	withPaint (always colour)
 		(circle (always size))
-
-
 
 
 
