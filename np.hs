@@ -7,67 +7,80 @@ svgHeight = 600
 svgWidth :: Double
 svgWidth = 800
 
---individual planet config
---format: size, speed, orbit radius, colour, OrbitDirection, Moons
-
---planetMoonsConfig :: [()]
-
---sunConfig :: ( Double, Double, Double, Colour, OrbitDirection, [(Double, Double, Double, Colour, OrbitDirection)] )
---sunConfig = (25.0, 0.0, 0.0, yellow, CounterClockwise, [])
-
---mercuryConfig :: ( Double, Double, Double, Colour, OrbitDirection, [(Double, Double, Double, Colour, OrbitDirection)] )
---mercuryConfig = (7.5, 0.5, 60, green, CounterClockwise, [])
-
---venusConfig :: ( Double, Double, Double, Colour, OrbitDirection, [(Double, Double, Double, Colour, OrbitDirection)] )
---venusConfig = (11, 0.35, 115, maroon, CounterClockwise, [])
-
---earthConfig :: ( Double, Double, Double, Colour, OrbitDirection, [(Double, Double, Double, Colour, OrbitDirection)] )
---earthConfig = (12.5, 0.25, 160, blue, CounterClockwise, [(5, 0.25, 25, black, CounterClockwise)])
-
---marsConfig :: ( Double, Double, Double, Colour, OrbitDirection, [(Double, Double, Double, Colour, OrbitDirection)] )
---marsConfig = (10, 0.4, 210, red, CounterClockwise, [])
-
---jupiterConfig :: ( Double, Double, Double, Colour, OrbitDirection, [(Double, Double, Double, Colour, OrbitDirection)] )
---jupiterConfig = (20, 0.29, 260, gray, CounterClockwise, [])
-
---saturnConfig :: ( Double, Double, Double, Colour, OrbitDirection, [(Double, Double, Double, Colour, OrbitDirection)] )
---saturnConfig = (16, 0.65, 300, silver, CounterClockwise, [])
-
---uranusConfig :: ( Double, Double, Double, Colour, OrbitDirection, [(Double, Double, Double, Colour, OrbitDirection)] )
---uranusConfig = (14, 0.60, 335, teal, CounterClockwise, [])
-
---neptuneConfig :: ( Double, Double, Double, Colour, OrbitDirection, [(Double, Double, Double, Colour, OrbitDirection)] )
---neptuneConfig = (14, 0.69, 375, navy, CounterClockwise, [])
-
---plutoConfig :: ( Double, Double, Double, Colour, OrbitDirection, [(Double, Double, Double, Colour, OrbitDirection)] )
---plutoConfig = (5, 0.8, 450, aqua, CounterClockwise, [])
-
---allPlanetConfig :: [(Double, Double, Double, Colour, OrbitDirection, [(Double, Double, Double, Colour, OrbitDirection)]) ]
---allPlanetConfig = [sunConfig, earthConfig, mercuryConfig, venusConfig, marsConfig, jupiterConfig, saturnConfig, uranusConfig, neptuneConfig, plutoConfig]
---config end	
-
-
+--size, colour
 planetShapeConfig :: [(Double, Colour)]
-planetShapeConfig = [(25, yellow), (7.5, green)]
+planetShapeConfig = 
+	[
+		(25, yellow), 
+		(7.5, green), 
+		(11, maroon), 
+		(12.5, blue),
+		(10, red),
+		(20, gray)
+	]
 
+--speed, direction, radius
 planetMovementConfig :: [(Double, OrbitDirection, Double)]
-planetMovementConfig = [(0, CounterClockwise, 0), (0.05, CounterClockwise, 50)]
+planetMovementConfig = 
+	[
+		(0, CounterClockwise, 0), 
+		(0.5, CounterClockwise, 50), 
+		(0.35, CounterClockwise, 100), 
+		(0.3, Clockwise, 135),
+		(0.25, CounterClockwise, 175),
+		(0.20, Clockwise, 215)
+	]
 
 --size, colour, radius, orbit direction
---moonConfig :: [ [(Double, Colour, Double, OrbitDirection)] ]
---moonConfig = [[], [(5, black, 25, CounterClockwise)]]
+moonConfig :: [ [(Double, Colour, Double, OrbitDirection)] ]
+moonConfig = 
+	[
+		[], 
+		[], 
+		[], 
+		[(5, black, 20, CounterClockwise)],
+		[],
+		[(7.5, purple, 35, CounterClockwise)]
+	]
 
 pic :: Animation
 pic = allPlanets
 
 allPlanets :: Animation
-allPlanets = combine (zipWith buildPlanet planetShapeConfig planetMovementConfig)
+allPlanets = combine (zipWith3 buildPlanet planetShapeConfig planetMovementConfig moonConfig)
 
-buildPlanet :: (Double, Colour) -> (Double, OrbitDirection, Double) -> Animation
-buildPlanet shapeConfig movementConfig = 
+buildPlanet :: (Double, Colour) -> (Double, OrbitDirection, Double) -> [(Double, Colour, Double, OrbitDirection)]-> Animation
+buildPlanet shapeConfig movementConfig moonConfig = 
 	getOrbitShape movementConfig
 		`plus` 
 			getPlanetAnimation shapeConfig movementConfig 
+				`plus`
+					getAllMoonAnimations moonConfig movementConfig 
+
+getAllMoonAnimations :: [(Double, Colour, Double, OrbitDirection)] -> (Double, OrbitDirection, Double) -> Animation
+getAllMoonAnimations moonConfig movementConfig = 
+	combine ( map tmp moonConfig )
+	where
+		tmp = getMoonAnimation movementConfig
+
+getMoonAnimation :: (Double, OrbitDirection, Double) -> (Double, Colour, Double, OrbitDirection) -> Animation
+getMoonAnimation movementConfig (size, colour, radius, orbitDirection) = 
+	translate ( getMoonTranslation movementConfig (size, colour, radius, orbitDirection) )
+		(getPlanetShape (size, colour))
+
+getMoonTranslation :: (Double, OrbitDirection, Double) -> (Double, Colour, Double, OrbitDirection) -> Varying (Double, Double)
+getMoonTranslation (speed, orbitDirection, radius) (size, colour, moonRadius, moonOrbitDirection) = 
+	cycleSmooth speed (getMoonCoordinates moonRadius size 0 (getPlanetOrbitCoordinates radius) )
+
+getMoonCoordinates :: Double -> Double -> Double -> [(Double, Double)] -> [(Double, Double)]
+getMoonCoordinates moonRadius moonSize angle [] = []
+getMoonCoordinates moonRadius moonSize angle ((x,y):xs) =	
+	(getCoordinateOnCircumference angle moonRadius x cos, getCoordinateOnCircumference angle moonRadius y sin) : getMoonCoordinates moonRadius moonSize (stepAngle angle) xs
+
+stepAngle :: Double -> Double
+stepAngle angle
+	| angle+0.25 > 360 = 0
+	| otherwise = angle + 0.25
 
 getOrbitShape :: (Double, OrbitDirection, Double) -> Animation
 getOrbitShape (speed, orbitDirection, radius) =
@@ -105,79 +118,8 @@ getPlanetShape (size, colour) =
 	withPaint (always colour)
 		(circle (always size))
 
-
-
-
-
-
-
-
-
---use map to build moon
-getMoons :: [(Double, Double, Double, Colour, OrbitDirection)] -> Double -> OrbitDirection -> [Animation]
-getMoons moonConfig orbitRadius orbitDirection
-	| (length moonConfig) == 0 = []
-	| (length moonConfig) > 1 = (getMoonShape (head moonConfig) (getCircleCoordinates orbitRadius orbitDirection) ) : (getMoons (tail moonConfig) orbitRadius orbitDirection)
-	| (length moonConfig) == 1 = [getMoonShape (head moonConfig) (getCircleCoordinates orbitRadius orbitDirection)]
-
-getMoonShape :: ( Double, Double, Double, Colour, OrbitDirection ) -> [(Double, Double)] -> Animation
-getMoonShape (size, speed, orbitRadius, colour, orbitDirection) planetCoordinates = 
-	translate (getMoonTranslationConfig orbitRadius speed orbitDirection planetCoordinates)
-		(withPaint (always colour)
-			(getCircleShape size))
-
-getMoonTranslationConfig :: Double -> Double -> OrbitDirection -> [(Double, Double)] -> Varying (Double, Double)
-getMoonTranslationConfig orbitRadius speed orbitDirection planetCoordinates = cycleSmooth speed (getMoonOrbitCoordinates 365 orbitRadius speed orbitDirection planetCoordinates)
-
-getMoonOrbitCoordinates :: Double -> Double -> Double -> OrbitDirection -> [(Double, Double)] -> [(Double, Double)]
-getMoonOrbitCoordinates currentAngle orbitRadius speed orbitDirection planetCoordinates 
-	| length planetCoordinates == 0 = []
-	| otherwise = 
-		(getCoordinateOnCircumference (getNextAngle currentAngle) orbitRadius (getXCoord (head planetCoordinates)) cos,
-			getCoordinateOnCircumference (getNextAngle currentAngle) orbitRadius (getYCoord (head planetCoordinates)) sin)  : 
-				(getMoonOrbitCoordinates (getNextAngle currentAngle) orbitRadius speed orbitDirection (tail planetCoordinates) )
-
-getNextAngle :: Double -> Double
-getNextAngle currentAngle
-	| currentAngle > 365  = 0
-	| otherwise = currentAngle+0.25
-
-getXCoord :: (Double, Double) -> Double
-getXCoord (x, y) = x;
-
-getYCoord :: (Double, Double) -> Double
-getYCoord (x, y) = y;
-
---getPlanetShape :: ( Double, Double, Double, Colour, OrbitDirection ) -> Animation
---getPlanetShape (size, speed, orbitRadius, colour, orbitDirection) = 
---	translate (getPlanetTranslationConfig orbitRadius speed orbitDirection) 
---		(withPaint (always colour) 
---			(getCircleShape size))
-
-getOrbitOutline :: Double -> Animation
-getOrbitOutline radius = 
-	translate (always (xCenter, yCenter)) 
-		(withBorder (always grey) (always 2.5) 
-			(withoutPaint (circle (always radius))))
-
-getPlanetTranslationConfig :: Double -> Double -> OrbitDirection-> Varying (Double, Double)
-getPlanetTranslationConfig orbitradius speed orbitDirection
-	| orbitradius == 0 = always (xCenter, yCenter)
-	| otherwise = cycleSmooth speed (getCircleCoordinates orbitradius orbitDirection)
-
-getCircleCoordinates :: Double -> OrbitDirection -> [ (Double, Double) ]
-getCircleCoordinates radius orbitDirection = [ (getCoordinateOnCircumference angle radius xCenter cos, getCoordinateOnCircumference angle radius yCenter sin) | angle <- getAngleList orbitDirection ]
-
-getAngleList :: OrbitDirection -> [Double]
-getAngleList orbitDirection 
-	| orbitDirection == Clockwise = angles
-	| otherwise = reverse angles
-
 angles :: [Double]
 angles = [0.0,0.1..359]
-
-getCircleShape :: Double -> Animation
-getCircleShape radius = circle (always radius)
 
 xCenter :: Double
 xCenter = svgWidth/2
