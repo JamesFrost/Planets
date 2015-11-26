@@ -3,9 +3,11 @@ import Animation
 
 svgHeight :: Double
 svgHeight = 1000
+--600
 
 svgWidth :: Double
 svgWidth = 1000
+--800
 
 --individual planet config
 --format: size, speed, orbit radius, colour, OrbitDirection, Moons
@@ -47,12 +49,13 @@ pic :: Animation
 pic = allPlanets
 
 allPlanets :: Animation
-allPlanets = combine [ buildPlanet n | n <- allPlanetConfig ]
+allPlanets = combine (map buildPlanet allPlanetConfig)
 
 buildPlanet :: ( Double, Double, Double, Colour, OrbitDirection,  [(Double, Double, Double, Colour, OrbitDirection)] ) -> Animation
 buildPlanet (size, speed, orbitRadius, colour, orbitDirection, moonConfig) = 
 	combine ((getOrbitOutline orbitRadius) : (getPlanetShape (size, speed, orbitRadius, colour, orbitDirection)) : (getMoons moonConfig orbitRadius orbitDirection))
 
+--use map to build moon
 getMoons :: [(Double, Double, Double, Colour, OrbitDirection)] -> Double -> OrbitDirection -> [Animation]
 getMoons moonConfig orbitRadius orbitDirection
 	| (length moonConfig) == 0 = []
@@ -107,7 +110,6 @@ getPlanetTranslationConfig orbitradius speed orbitDirection
 getCircleCoordinates :: Double -> OrbitDirection -> [ (Double, Double) ]
 getCircleCoordinates radius orbitDirection = [ (getCoordinateOnCircumference angle radius xCenter cos, getCoordinateOnCircumference angle radius yCenter sin) | angle <- getAngleList orbitDirection ]
 
---Need refactor 
 getAngleList :: OrbitDirection -> [Double]
 getAngleList orbitDirection 
 	| orbitDirection == Clockwise = angles
