@@ -66,28 +66,31 @@ buildPlanet shapeConfig movementConfig moonConfig =
 getAllMoonAnimations :: [(Double, Colour, Double, OrbitDirection)] -> (Double, OrbitDirection, Double) -> Animation
 getAllMoonAnimations moonConfig movementConfig = 
 	combine ( map moonAnimation moonConfig )
-	where
-		moonAnimation = getMoonAnimation movementConfig
+		where
+			moonAnimation = getMoonAnimation movementConfig
 
 --Builds a single moon animation
 getMoonAnimation :: (Double, OrbitDirection, Double) -> (Double, Colour, Double, OrbitDirection) -> Animation
 getMoonAnimation movementConfig (size, colour, radius, orbitDirection) = 
-	translate ( getMoonTranslation movementConfig (size, colour, radius, orbitDirection) )
-		(getPlanetShape (size, colour))
+	translate ( getMoonTranslation movementConfig (size, colour, radius, orbitDirection) ) $
+	getPlanetShape (size, colour)
 
 --Generates the translation config for moon animations
 getMoonTranslation :: (Double, OrbitDirection, Double) -> (Double, Colour, Double, OrbitDirection) -> Varying (Double, Double)
 getMoonTranslation (speed, orbitDirection, radius) (size, colour, moonRadius, moonOrbitDirection) = 
-	cycleSmooth speed 
-		(getMoonCoordinates moonRadius size 0 moonOrbitDirection
-			( getPlanetOrbitCoordinates radius orbitDirection ) )
+	cycleSmooth speed (getMoonOrbitCoordinates moonRadius size 0 moonOrbitDirection orbitingPlanetCoordinates)
+		where
+			orbitingPlanetCoordinates = getPlanetOrbitCoordinates radius orbitDirection
 
---Generates the coordinates of a moons orbit
-getMoonCoordinates :: Double -> Double -> Double -> OrbitDirection-> [(Double, Double)] -> [(Double, Double)]
-getMoonCoordinates moonRadius moonSize angle moonOrbitDirection [] = []
-getMoonCoordinates moonRadius moonSize angle moonOrbitDirection ( (x,y):xs ) =	
+--Recursively generates the coordinates of a moons orbit
+--Steps through the coordinates of the planet the moon is orbiting
+getMoonOrbitCoordinates :: Double -> Double -> Double -> OrbitDirection-> [(Double, Double)] -> [(Double, Double)]
+getMoonOrbitCoordinates moonRadius moonSize angle moonOrbitDirection [] = []
+getMoonOrbitCoordinates moonRadius moonSize angle moonOrbitDirection ( (x,y):xs ) =	
 	(getCoordinateOnCircumference angle moonRadius x cos, getCoordinateOnCircumference angle moonRadius y sin) : 
-		getMoonCoordinates moonRadius moonSize (getNextMoonOrbitAngle angle moonOrbitDirection) moonOrbitDirection xs
+		getMoonOrbitCoordinates moonRadius moonSize nextAngle moonOrbitDirection xs
+			where
+				nextAngle = getNextMoonOrbitAngle angle moonOrbitDirection
 
 --Returns the next angle in a moons orbit
 getNextMoonOrbitAngle :: Double -> OrbitDirection -> Double
@@ -98,15 +101,15 @@ getNextMoonOrbitAngle angle orbitDirection
 --Background outline of a planets orbit
 getOrbitOutline :: (Double, OrbitDirection, Double) -> Animation
 getOrbitOutline (speed, orbitDirection, radius) =
-	translate (always (xCenter, yCenter)) 
-		(withBorder (always grey) (always 2.5) 
-			(withoutPaint (circle (always radius))))
+	translate (always (xCenter, yCenter)) $
+	withBorder (always grey) (always 2.5) $
+	withoutPaint (circle (always radius))
 
 --Builds a single planet animation
 getPlanetAnimation :: (Double, Colour) -> (Double, OrbitDirection, Double) -> Animation
 getPlanetAnimation shapeConfig movementConfig =
-	translate (getPlanetTranslation movementConfig)
-		(getPlanetShape shapeConfig)
+	translate (getPlanetTranslation movementConfig) $
+	getPlanetShape shapeConfig
 
 --Get the translation config for a single planet
 getPlanetTranslation :: (Double, OrbitDirection, Double) -> Varying (Double, Double)
@@ -120,7 +123,7 @@ getPlanetOrbitCoordinates radius orbitDirection
 	| otherwise = reverse orbitCoordinates
 	where
 		orbitCoordinates =
-			--scale using the orbit radius, then apply x and y center offsets to coordinates on a circles circumference 
+			--scale using the orbit radius, then apply x and y center offsets to coordinates on the orbits circumference 
 			map (\(x, y) -> ( (radius*x)+xCenter, (radius*y)+yCenter) ) circleCircumferenceCoordinates
 
 --List of (x,y) coordinates on the circumference of a circle with radius 1
@@ -136,12 +139,13 @@ getCoordinatePairOnCircumference angle =
 
 --Gets a single coordinate (either x or y) on a circles circumference
 getCoordinateOnCircumference :: Double -> Double -> Double -> (Double -> Double) -> Double
-getCoordinateOnCircumference angle radius circleMidPoint trigFunc = (circleMidPoint + radius *(trigFunc angle) )
+getCoordinateOnCircumference angle radius circleMidPoint trigFunc = 
+	circleMidPoint + radius * (trigFunc angle) 
 
 getPlanetShape :: (Double, Colour) -> Animation
 getPlanetShape (size, colour) =
-	withPaint (always colour)
-		(circle (always size))
+	withPaint (always colour) $
+	circle (always size)
 
 xCenter :: Double
 xCenter = svgWidth/2
