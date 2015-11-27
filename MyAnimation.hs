@@ -1,6 +1,7 @@
-module Demo where
+module MyAnimation where
 import Animation
 
+--config start
 svgHeight :: Double
 svgHeight = 600
 
@@ -16,7 +17,7 @@ planetShapeConfig =
 		(11, maroon), 
 		(12.5, blue),
 		(10, red),
-		(20, gray)
+		(15, gray)
 	]
 
 --speed, direction, radius
@@ -25,10 +26,10 @@ planetMovementConfig =
 	[
 		(0, CounterClockwise, 0), 
 		(0.5, CounterClockwise, 50), 
-		(0.35, CounterClockwise, 100), 
-		(0.3, Clockwise, 135),
-		(0.25, CounterClockwise, 175),
-		(0.20, Clockwise, 215)
+		(0.35, Clockwise, 90), 
+		(0.3, CounterClockwise, 135),
+		(0.25, CounterClockwise, 185),
+		(0.20, Clockwise, 245)
 	]
 
 --size, colour, radius, orbit direction
@@ -40,82 +41,100 @@ moonConfig =
 		[], 
 		[(5, black, 20, CounterClockwise)],
 		[],
-		[(7.5, purple, 35, Clockwise)]
+		[(7.5, purple, 30, Clockwise), (4, aqua, 50, CounterClockwise)]
 	]
 
-pic :: Animation
-pic = allPlanets
+--config end
 
+picture :: Animation
+picture = allPlanets
+
+--Builds all planets outlined in the config above
 allPlanets :: Animation
 allPlanets = combine (zipWith3 buildPlanet planetShapeConfig planetMovementConfig moonConfig)
 
+--Builds a single planet outlined in the config above
 buildPlanet :: (Double, Colour) -> (Double, OrbitDirection, Double) -> [(Double, Colour, Double, OrbitDirection)]-> Animation
 buildPlanet shapeConfig movementConfig moonConfig = 
-	getOrbitShape movementConfig
+	getOrbitOutline movementConfig
 		`plus` 
 			getPlanetAnimation shapeConfig movementConfig 
 				`plus`
 					getAllMoonAnimations moonConfig movementConfig 
 
+--Builds all moon animations for a planet
 getAllMoonAnimations :: [(Double, Colour, Double, OrbitDirection)] -> (Double, OrbitDirection, Double) -> Animation
 getAllMoonAnimations moonConfig movementConfig = 
 	combine ( map moonAnimation moonConfig )
 	where
 		moonAnimation = getMoonAnimation movementConfig
 
+--Builds a single moon animation
 getMoonAnimation :: (Double, OrbitDirection, Double) -> (Double, Colour, Double, OrbitDirection) -> Animation
 getMoonAnimation movementConfig (size, colour, radius, orbitDirection) = 
 	translate ( getMoonTranslation movementConfig (size, colour, radius, orbitDirection) )
 		(getPlanetShape (size, colour))
 
+--Generates the translation config for moon animations
 getMoonTranslation :: (Double, OrbitDirection, Double) -> (Double, Colour, Double, OrbitDirection) -> Varying (Double, Double)
 getMoonTranslation (speed, orbitDirection, radius) (size, colour, moonRadius, moonOrbitDirection) = 
 	cycleSmooth speed 
 		(getMoonCoordinates moonRadius size 0 moonOrbitDirection
 			( getPlanetOrbitCoordinates radius orbitDirection ) )
 
+--Generates the coordinates of a moons orbit
 getMoonCoordinates :: Double -> Double -> Double -> OrbitDirection-> [(Double, Double)] -> [(Double, Double)]
 getMoonCoordinates moonRadius moonSize angle moonOrbitDirection [] = []
 getMoonCoordinates moonRadius moonSize angle moonOrbitDirection ( (x,y):xs ) =	
 	(getCoordinateOnCircumference angle moonRadius x cos, getCoordinateOnCircumference angle moonRadius y sin) : 
-		getMoonCoordinates moonRadius moonSize (getNextOrbitAngle angle moonOrbitDirection) moonOrbitDirection xs
+		getMoonCoordinates moonRadius moonSize (getNextMoonOrbitAngle angle moonOrbitDirection) moonOrbitDirection xs
 
-getNextOrbitAngle :: Double -> OrbitDirection -> Double
-getNextOrbitAngle angle orbitDirection
+--Returns the next angle in a moons orbit
+getNextMoonOrbitAngle :: Double -> OrbitDirection -> Double
+getNextMoonOrbitAngle angle orbitDirection
 	| orbitDirection == Clockwise = angle + 0.25
 	| otherwise = angle - 0.25
 
-getOrbitShape :: (Double, OrbitDirection, Double) -> Animation
-getOrbitShape (speed, orbitDirection, radius) =
+--Background outline of a planets orbit
+getOrbitOutline :: (Double, OrbitDirection, Double) -> Animation
+getOrbitOutline (speed, orbitDirection, radius) =
 	translate (always (xCenter, yCenter)) 
 		(withBorder (always grey) (always 2.5) 
 			(withoutPaint (circle (always radius))))
 
+--Builds a single planet animation
 getPlanetAnimation :: (Double, Colour) -> (Double, OrbitDirection, Double) -> Animation
 getPlanetAnimation shapeConfig movementConfig =
 	translate (getPlanetTranslation movementConfig)
 		(getPlanetShape shapeConfig)
 
+--Get the translation config for a single planet
 getPlanetTranslation :: (Double, OrbitDirection, Double) -> Varying (Double, Double)
 getPlanetTranslation (speed, orbitDirection, radius) =
 	cycleSmooth speed (getPlanetOrbitCoordinates radius orbitDirection)
 
+--Generates the coordinates of a planets orbit
 getPlanetOrbitCoordinates :: Double -> OrbitDirection -> [(Double, Double)]
 getPlanetOrbitCoordinates radius orbitDirection
 	| orbitDirection == Clockwise = orbitCoordinates
 	| otherwise = reverse orbitCoordinates
 	where
 		orbitCoordinates =
+			--scale using the orbit radius, then apply x and y center offsets to coordinates on a circles circumference 
 			map (\(x, y) -> ( (radius*x)+xCenter, (radius*y)+yCenter) ) circleCircumferenceCoordinates
 
+--List of (x,y) coordinates on the circumference of a circle with radius 1
+--Circle is centered around (0,0)
 circleCircumferenceCoordinates :: [(Double, Double)]
 circleCircumferenceCoordinates = 
 	map getCoordinatePairOnCircumference [0.0,0.1..359]
 
+--Retuns (x,y) coordinates on a circles circumference at a specified angle
 getCoordinatePairOnCircumference :: Double -> (Double, Double)
 getCoordinatePairOnCircumference angle =
 	(getCoordinateOnCircumference angle 1 0 cos, getCoordinateOnCircumference angle 1 0 sin)
 
+--Gets a single coordinate (either x or y) on a circles circumference
 getCoordinateOnCircumference :: Double -> Double -> Double -> (Double -> Double) -> Double
 getCoordinateOnCircumference angle radius circleMidPoint trigFunc = (circleMidPoint + radius *(trigFunc angle) )
 
@@ -133,4 +152,4 @@ yCenter = svgHeight/2
 data OrbitDirection = Clockwise | CounterClockwise deriving (Enum, Eq)
 
 make :: IO ()
-make = writeFile "planets.svg" (svg svgHeight svgWidth pic)
+make = writeFile "planets.svg" (svg svgWidth svgHeight picture)
