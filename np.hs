@@ -40,7 +40,7 @@ moonConfig =
 		[], 
 		[(5, black, 20, CounterClockwise)],
 		[],
-		[(7.5, purple, 35, CounterClockwise)]
+		[(7.5, purple, 35, Clockwise)]
 	]
 
 pic :: Animation
@@ -59,9 +59,9 @@ buildPlanet shapeConfig movementConfig moonConfig =
 
 getAllMoonAnimations :: [(Double, Colour, Double, OrbitDirection)] -> (Double, OrbitDirection, Double) -> Animation
 getAllMoonAnimations moonConfig movementConfig = 
-	combine ( map tmp moonConfig )
+	combine ( map moonAnimation moonConfig )
 	where
-		tmp = getMoonAnimation movementConfig
+		moonAnimation = getMoonAnimation movementConfig
 
 getMoonAnimation :: (Double, OrbitDirection, Double) -> (Double, Colour, Double, OrbitDirection) -> Animation
 getMoonAnimation movementConfig (size, colour, radius, orbitDirection) = 
@@ -71,18 +71,19 @@ getMoonAnimation movementConfig (size, colour, radius, orbitDirection) =
 getMoonTranslation :: (Double, OrbitDirection, Double) -> (Double, Colour, Double, OrbitDirection) -> Varying (Double, Double)
 getMoonTranslation (speed, orbitDirection, radius) (size, colour, moonRadius, moonOrbitDirection) = 
 	cycleSmooth speed 
-		(getMoonCoordinates moonRadius size 0 
+		(getMoonCoordinates moonRadius size 0 moonOrbitDirection
 			( getPlanetOrbitCoordinates radius orbitDirection ) )
 
-getMoonCoordinates :: Double -> Double -> Double -> [(Double, Double)] -> [(Double, Double)]
-getMoonCoordinates moonRadius moonSize angle [] = []
-getMoonCoordinates moonRadius moonSize angle ((x,y):xs) =	
-	(getCoordinateOnCircumference angle moonRadius x cos, getCoordinateOnCircumference angle moonRadius y sin) : getMoonCoordinates moonRadius moonSize (stepAngle angle) xs
+getMoonCoordinates :: Double -> Double -> Double -> OrbitDirection-> [(Double, Double)] -> [(Double, Double)]
+getMoonCoordinates moonRadius moonSize angle moonOrbitDirection [] = []
+getMoonCoordinates moonRadius moonSize angle moonOrbitDirection ( (x,y):xs ) =	
+	(getCoordinateOnCircumference angle moonRadius x cos, getCoordinateOnCircumference angle moonRadius y sin) : 
+		getMoonCoordinates moonRadius moonSize (getNextOrbitAngle angle moonOrbitDirection) moonOrbitDirection xs
 
-stepAngle :: Double -> Double
-stepAngle angle
-	| angle+0.25 > 360 = 0
-	| otherwise = angle + 0.25
+getNextOrbitAngle :: Double -> OrbitDirection -> Double
+getNextOrbitAngle angle orbitDirection
+	| orbitDirection == Clockwise = angle + 0.25
+	| otherwise = angle - 0.25
 
 getOrbitShape :: (Double, OrbitDirection, Double) -> Animation
 getOrbitShape (speed, orbitDirection, radius) =
