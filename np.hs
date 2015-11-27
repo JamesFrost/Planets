@@ -70,7 +70,9 @@ getMoonAnimation movementConfig (size, colour, radius, orbitDirection) =
 
 getMoonTranslation :: (Double, OrbitDirection, Double) -> (Double, Colour, Double, OrbitDirection) -> Varying (Double, Double)
 getMoonTranslation (speed, orbitDirection, radius) (size, colour, moonRadius, moonOrbitDirection) = 
-	cycleSmooth speed (getMoonCoordinates moonRadius size 0 (getPlanetOrbitCoordinates radius) )
+	cycleSmooth speed 
+		(getMoonCoordinates moonRadius size 0 
+			( getPlanetOrbitCoordinates radius orbitDirection ) )
 
 getMoonCoordinates :: Double -> Double -> Double -> [(Double, Double)] -> [(Double, Double)]
 getMoonCoordinates moonRadius moonSize angle [] = []
@@ -94,13 +96,16 @@ getPlanetAnimation shapeConfig movementConfig =
 		(getPlanetShape shapeConfig)
 
 getPlanetTranslation :: (Double, OrbitDirection, Double) -> Varying (Double, Double)
-getPlanetTranslation (speed, orbitDirection, radius) 
-	| orbitDirection == Clockwise = cycleSmooth speed (getPlanetOrbitCoordinates radius)
-	| otherwise = cycleSmooth speed ( reverse (getPlanetOrbitCoordinates radius) )
+getPlanetTranslation (speed, orbitDirection, radius) =
+	cycleSmooth speed (getPlanetOrbitCoordinates radius orbitDirection)
 
-getPlanetOrbitCoordinates :: Double -> [(Double, Double)]
-getPlanetOrbitCoordinates radius =
-	map (\(x, y) -> ( (radius*x)+xCenter, (radius*y)+yCenter) ) circleCircumferenceCoordinates
+getPlanetOrbitCoordinates :: Double -> OrbitDirection -> [(Double, Double)]
+getPlanetOrbitCoordinates radius orbitDirection
+	| orbitDirection == Clockwise = orbitCoordinates
+	| otherwise = reverse orbitCoordinates
+	where
+		orbitCoordinates =
+			map (\(x, y) -> ( (radius*x)+xCenter, (radius*y)+yCenter) ) circleCircumferenceCoordinates
 
 circleCircumferenceCoordinates :: [(Double, Double)]
 circleCircumferenceCoordinates = 
@@ -118,9 +123,6 @@ getPlanetShape (size, colour) =
 	withPaint (always colour)
 		(circle (always size))
 
-angles :: [Double]
-angles = [0.0,0.1..359]
-
 xCenter :: Double
 xCenter = svgWidth/2
 
@@ -130,4 +132,4 @@ yCenter = svgHeight/2
 data OrbitDirection = Clockwise | CounterClockwise deriving (Enum, Eq)
 
 make :: IO ()
-make = writeFile "test.svg" (svg svgHeight svgWidth pic)
+make = writeFile "planets.svg" (svg svgHeight svgWidth pic)
